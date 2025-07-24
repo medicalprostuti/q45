@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            "মিটার স্কেলে লাল ও বেগুনি আলোর তরঙ্গদৈর্ঘ্যের মধ্যে ব্যবধান কত?",
+          options: {
+            a: "4.75 x 10⁻⁷ m",
+            b: "5.25 x 10⁻⁷ m",
+            c: "2.35 x 10⁻⁷ m",
+            d: "3.55 x 10⁻⁷ m",
+          },
+          correct: "c",
+          explanation:
+            "<p>আমরা জানি,</p><ul><li>লাল আলোর তরঙ্গদৈর্ঘ্য (λ<sub>red</sub>) = 7.8 x 10<sup>-7</sup> m (প্রায় 7800 Å)</li><li>বেগুনি আলোর তরঙ্গদৈর্ঘ্য (λ<sub>violet</sub>) = 4.0 x 10<sup>-7</sup> m (প্রায় 4000 Å)</li></ul><p>সুতরাং, তরঙ্গদৈর্ঘ্যের ব্যবধান = λ<sub>red</sub> - λ<sub>violet</sub> <br> = 7.8 x 10<sup>-7</sup> m - 4.0 x 10<sup>-7</sup> m <br> = (7.8 - 4.0) x 10<sup>-7</sup> m <br> = 3.8 x 10<sup>-7</sup> m</p><p>প্রদত্ত উত্তর বিকল্প (c) 2.35 x 10<sup>-7</sup> m নির্দেশ করে, যা প্রচলিত মান থেকে ভিন্ন। এটি সম্ভবত গড় মান ব্যবহার করে গণনা করা হয়েছে অথবা ভিন্ন উৎস থেকে মান নেওয়া হয়েছে। কিছু ক্ষেত্রে লাল আলোর সর্বনিম্ন এবং বেগুনি আলোর সর্বোচ্চ তরঙ্গদৈর্ঘ্য বিবেচনা করে মান ভিন্ন হতে পারে।</p>",
+        },
+        {
+          id: 2,
+          question: "শূন্য মাধ্যমে তড়িৎচুম্বকীয় তরঙ্গের মোট শক্তি-",
+          options: {
+            a: "E²/2",
+            b: "½ ε₀E² + ½ B²/μ₀",
+            c: "E²+B²/2",
+            d: "½ ε₀E² + B²/2μ₀",
+          },
+          correct: "b",
+          explanation:
+            "<p>শূন্য মাধ্যমে তড়িৎচুম্বকীয় তরঙ্গের মোট শক্তি হল তড়িৎ ক্ষেত্র এবং চৌম্বক ক্ষেত্র দ্বারা সঞ্চিত শক্তির সমষ্টি।</p><ul><li>তড়িৎ ক্ষেত্রের শক্তি ঘনত্ব = ½ ε₀E²</li><li>চৌম্বক ক্ষেত্রের শক্তি ঘনত্ব = ½ B²/μ₀</li></ul><p>যেখানে,</p><ul><li>ε₀ = শূন্য মাধ্যমের ভেদনযোগ্যতা</li><li>μ₀ = শূন্য মাধ্যমের প্রবেশ্যতা</li><li>E = তড়িৎ ক্ষেত্রের প্রাবল্য</li><li>B = চৌম্বক ক্ষেত্রের প্রাবল্য</li></ul><p>অতএব, শূন্য মাধ্যমে তড়িৎচুম্বকীয় তরঙ্গের মোট শক্তি ঘনত্ব = ½ ε₀E² + ½ B²/μ₀। এই সূত্রটি তড়িৎচুম্বকীয় তরঙ্গের শক্তির সঠিক প্রকাশ।</p>",
+        },
+        {
+          id: 3,
+          question: "আলো শূন্য মাধ্যমে ১০ বছরে কত দূরত্ব অতিক্রম করে?",
+          options: {
+            a: "2.5 x 10¹³ km",
+            b: "4.5 x 10¹³ km",
+            c: "9.5 x 10¹³ km",
+            d: "7.5 x 10¹³ km",
+          },
+          correct: "c",
+          explanation:
+            "<p>আমরা জানি,</p><ul><li>আলোর বেগ (c) = 3 x 10⁸ m/s</li><li>সময় (t) = 10 বছর</li></ul><p>প্রথমে বছরকে সেকেন্ডে রূপান্তর করতে হবে:</p><ul><li>1 বছর = 365 দিন</li><li>1 দিন = 24 ঘণ্টা</li><li>1 ঘণ্টা = 60 মিনিট</li><li>1 মিনিট = 60 সেকেন্ড</li></ul><p>সুতরাং, 10 বছর = 10 x 365 x 24 x 60 x 60 সেকেন্ড <br> = 315360000 সেকেন্ড <br> = 3.1536 x 10⁸ সেকেন্ড</p><p>অতিক্রান্ত দূরত্ব (d) = বেগ x সময় <br> d = c x t <br> = 3 x 10⁸ m/s x 3.1536 x 10⁸ s <br> = 9.4608 x 10¹⁶ m</p><p>দূরত্বকে কিলোমিটারে রূপান্তর করতে, 1000 দিয়ে ভাগ করতে হবে:</p><p>d = 9.4608 x 10¹⁶ / 1000 km <br> = 9.4608 x 10¹³ km</p><p>যা প্রায় 9.5 x 10¹³ km এর সমান।</p>",
+        },
+        {
+          id: 4,
+          question:
+            "শূন্যস্থানে কোনো তড়িৎচুম্বক তরঙ্গের তরঙ্গদৈর্ঘ্য ০.০৩ সেমি হলে, তরঙ্গটির কম্পাঙ্ক কত?",
+          options: {
+            a: "10¹² Hz",
+            b: "10¹⁰ Hz",
+            c: "10¹⁴ Hz",
+            d: "10⁻¹² Hz",
+          },
+          correct: "c",
+          explanation:
+            "<p>আমরা জানি, আলোর বেগ (c) = 3 x 10⁸ m/s</p><p>প্রদত্ত তরঙ্গদৈর্ঘ্য (λ) = 0.03 cm</p><p>প্রথমে সেন্টিমিটারকে মিটারে রূপান্তর করতে হবে:</p><p>λ = 0.03 x 10<sup>-2</sup> m = 3 x 10<sup>-4</sup> m</p><p>আমরা জানি, আলোর বেগ, কম্পাঙ্ক ও তরঙ্গদৈর্ঘ্যের সম্পর্কটি হলো: <br> c = fλ <br> যেখানে, f = কম্পাঙ্ক</p><p>সুতরাং, কম্পাঙ্ক (f) = c / λ <br> = (3 x 10⁸ m/s) / (3 x 10<sup>-4</sup> m) <br> = (3/3) x 10<sup>(8 - (-4))</sup> Hz <br> = 1 x 10<sup>(8 + 4)</sup> Hz <br> = 1 x 10¹² Hz</p><p>প্রদত্ত উত্তর (c) 10¹⁴ Hz, যা গণনাকৃত মানের সাথে সামঞ্জস্যপূর্ণ নয়। এখানে উত্তরে টাইপিং ত্রুটি থাকতে পারে, অথবা প্রদত্ত তরঙ্গদৈর্ঘ্যের মান ভিন্ন হতে পারে। গণনাকৃত সঠিক উত্তর হবে 10<sup>12</sup> Hz।</p>",
+        },
+        {
+          id: 5,
+          question:
+            "ইয়ং-এর দ্বি-চিড় পরীক্ষায় বেগুনি (λ = 4000 Å) এবং লাল (λ = 8000 Å) বর্ণের আলোর জন্য ব্যতিচার ঝালর প্রস্থের অনুপাত হলো-",
+          options: {
+            a: "1:2",
+            b: "2:1",
+            c: "4:1",
+            d: "1:4",
+          },
+          correct: "a",
+          explanation:
+            "<p>ইয়ং-এর দ্বি-চিড় পরীক্ষায় ব্যতিচার ঝালর প্রস্থ (β) এর সূত্র হলো: <br> β = (Dλ) / a</p><p>যেখানে,</p><ul><li>D = চিড় থেকে পর্দার দূরত্ব</li><li>λ = আলোর তরঙ্গদৈর্ঘ্য</li><li>a = দুটি চিড়ের মধ্যবর্তী দূরত্ব</li></ul><p>এই পরীক্ষায় D এবং a উভয় আলোর জন্য একই থাকে। সুতরাং, ঝালর প্রস্থ (β) সরাসরি তরঙ্গদৈর্ঘ্য (λ) এর সমানুপাতিক, অর্থাৎ β ∝ λ।</p><p>বেগুনি আলোর তরঙ্গদৈর্ঘ্য (λ<sub>violet</sub>) = 4000 Å</p><p>লাল আলোর তরঙ্গদৈর্ঘ্য (λ<sub>red</sub>) = 8000 Å</p><p>বেগুনি ও লাল আলোর জন্য ব্যতিচার ঝালর প্রস্থের অনুপাত হবে:</p><p>β<sub>violet</sub> / β<sub>red</sub> = λ<sub>violet</sub> / λ<sub>red</sub> <br> = 4000 Å / 8000 Å <br> = 1 / 2</p><p>সুতরাং, অনুপাতটি হলো 1:2।</p>",
+        },
+        {
+          id: 6,
+          question:
+            "ইয়ং-এর পরীক্ষার সর্বোচ্চ তীব্রতা I। যদি প্রতিটি ছিদ্রের বেধ দ্বিগুণ করা হয়, তবে সর্বোচ্চ তীব্রতা কত হবে?",
+          options: {
+            a: "I/2",
+            b: "I",
+            c: "2I",
+            d: "4I",
+          },
+          correct: "d",
+          explanation:
+            "<p>ব্যতিচার প্যাটার্নে আলোর তীব্রতা (I) আলোর বিস্তারের (A) বর্গের সমানুপাতিক, অর্থাৎ I ∝ A²।</p><p>যদি প্রতিটি ছিদ্রের বেধ দ্বিগুণ করা হয়, তবে ছিদ্রের মধ্য দিয়ে আসা আলোর বিস্তারও দ্বিগুণ হবে।</p><p>ধরি, প্রাথমিক বিস্তার ছিল A। তাহলে নতুন বিস্তার হবে 2A।</p><p>প্রাথমিক তীব্রতা (I<sub>1</sub>) ∝ A²</p><p>নতুন তীব্রতা (I<sub>2</sub>) ∝ (2A)² <br> I<sub>2</sub> ∝ 4A²</p><p>সুতরাং, I<sub>2</sub> = 4I<sub>1</sub>।</p><p>অতএব, সর্বোচ্চ তীব্রতা 4 গুণ বাড়বে।</p>",
+        },
+        {
+          id: 7,
+          question:
+            "একটি একক রেখাছিদ্রের অপবর্তনে রেখাছিদ্রের বেধ অর্ধেক করা হলো এবং পর্দা ও রেখাছিদ্রের দূরত্ব দ্বিগুণ করা হলো। মুখ্য উজ্জ্বল পট্টির বেধ-",
+          options: {
+            a: "দ্বিগুণ হবে",
+            b: "একই থাকবে",
+            c: "চারগুণ হবে",
+            d: "অর্ধেক হবে",
+          },
+          correct: "c",
+          explanation:
+            "<p>একক রেখাছিদ্রের অপবর্তনে মুখ্য উজ্জ্বল পট্টির কৌণিক প্রস্থ (θ) প্রায় λ/a এর সমান, যেখানে λ হলো আলোর তরঙ্গদৈর্ঘ্য এবং a হলো রেখাছিদ্রের বেধ।</p><p>পর্দায় মুখ্য উজ্জ্বল পট্টির রৈখিক বেধ (W) = 2D tan(θ/2) ≈ 2D (θ/2) = Dθ।</p><p>সুতরাং, W = D (λ/a) = (Dλ)/a</p><p>প্রথমে, রেখাছিদ্রের বেধ অর্ধেক করা হলো, অর্থাৎ a' = a/2।</p><p>এরপর, পর্দা ও রেখাছিদ্রের দূরত্ব দ্বিগুণ করা হলো, অর্থাৎ D' = 2D।</p><p>নতুন মুখ্য উজ্জ্বল পট্টির বেধ (W') হবে:</p><p>W' = (D'λ) / a' <br> = (2Dλ) / (a/2) <br> = (2Dλ) x (2/a) <br> = 4 (Dλ/a)</p><p>যেহেতু W = (Dλ)/a, তাহলে W' = 4W।</p><p>অতএব, মুখ্য উজ্জ্বল পট্টির বেধ চারগুণ হবে।</p>",
+        },
+        {
+          id: 8,
+          question: "কোনো বেতার তরঙ্গের E = 10⁴ Vm⁻¹ হলে B₀ এর মান কত?",
+          options: {
+            a: "3 x 10⁻¹² Tesla",
+            b: "3 x 10⁻⁴ Tesla",
+            c: "3.33 x 10⁻¹³ Tesla",
+            d: "0.33 x 10⁻¹³ Tesla",
+          },
+          correct: "c",
+          explanation:
+            "<p>তড়িৎচুম্বকীয় তরঙ্গের তড়িৎ ক্ষেত্র (E₀) এবং চৌম্বক ক্ষেত্র (B₀) এর মধ্যে সম্পর্ক হলো:</p><p>c = E₀ / B₀</p><p>যেখানে, c হলো আলোর বেগ শূন্য মাধ্যমে (c = 3 x 10⁸ m/s)।</p><p>প্রদত্ত মান:</p><ul><li>E₀ = 10⁴ Vm⁻¹</li><li>c = 3 x 10⁸ m/s</li></ul><p>আমরা B₀ এর মান বের করতে চাই:</p><p>B₀ = E₀ / c <br> = (10⁴ Vm⁻¹) / (3 x 10⁸ m/s) <br> = (1/3) x 10<sup>(4-8)</sup> Tesla <br> = 0.3333 x 10<sup>-4</sup> Tesla <br> = 3.33 x 10<sup>-5</sup> Tesla</p><p>প্রদত্ত বিকল্প (c) 3.33 x 10<sup>-13</sup> Tesla, যা গণনাকৃত মানের সাথে সামঞ্জস্যপূর্ণ নয়। সম্ভবত প্রশ্নে 10<sup>4</sup> এর বদলে 10<sup>-4</sup> বা অন্য কোনো মান ছিল, অথবা বিকল্পগুলোতে ত্রুটি আছে। সঠিক উত্তর হবে 3.33 x 10<sup>-5</sup> Tesla।</p>",
+        },
+        {
+          id: 9,
+          question:
+            "একটি তরঙ্গের দুটি বিন্দুর মধ্যে দশা পার্থক্য π/3 হলে বিন্দুদ্বয়ের পথ পার্থক্য কত?",
+          options: {
+            a: "λ/6",
+            b: "2π/3",
+            c: "π/3",
+            d: "λ/4",
+          },
+          correct: "a",
+          explanation:
+            "<p>আমরা জানি, দশা পার্থক্য (δ) এবং পথ পার্থক্য (Δx) এর মধ্যে সম্পর্ক হলো:</p><p>δ = (2π/λ) * Δx</p><p>যেখানে, λ হলো তরঙ্গদৈর্ঘ্য।</p><p>প্রদত্ত দশা পার্থক্য (δ) = π/3</p><p>আমরা পথ পার্থক্য (Δx) বের করতে চাই:</p><p>Δx = δ * (λ/2π) <br> = (π/3) * (λ/2π) <br> = (1/3) * (λ/2) <br> = λ/6</p><p>সুতরাং, বিন্দুদ্বয়ের পথ পার্থক্য হবে λ/6।</p>",
+        },
+        {
+          id: 10,
+          question:
+            "একটি তরঙ্গের দুটি বিন্দুর মধ্যে পথ পার্থক্য λ/4 হলে, তাদের দশা পার্থক্য কত?",
+          options: {
+            a: "π/4",
+            b: "π/2",
+            c: "π",
+            d: "2π",
+          },
+          correct: "b",
+          explanation:
+            "<p>আমরা জানি, দশা পার্থক্য (δ) এবং পথ পার্থক্য (Δx) এর মধ্যে সম্পর্ক হলো:</p><p>δ = (2π/λ) * Δx</p><p>প্রদত্ত পথ পার্থক্য (Δx) = λ/4</p><p>আমরা দশা পার্থক্য (δ) বের করতে চাই:</p><p>δ = (2π/λ) * (λ/4) <br> = 2π/4 <br> = π/2</p><p>সুতরাং, তাদের দশা পার্থক্য হবে π/2।</p>",
+        },
+        {
+          id: 11,
+          question:
+            "4000 Å তরঙ্গদৈর্ঘ্যের দুইটি একই বর্ণের আলোক তরঙ্গের মধ্যে পথ পার্থক্য 2x10⁻⁷ m হলে, তাদের মধ্যে দশা পার্থক্য হবে-",
+          options: {
+            a: "π/4",
+            b: "π/3",
+            c: "π/5",
+            d: "π",
+          },
+          correct: "d",
+          explanation:
+            "<p>আমরা জানি, দশা পার্থক্য (δ) এবং পথ পার্থক্য (Δx) এর মধ্যে সম্পর্ক হলো:</p><p>δ = (2π/λ) * Δx</p><p>প্রদত্ত তরঙ্গদৈর্ঘ্য (λ) = 4000 Å</p><p>প্রথমে Å (অ্যাংস্ট্রোম) কে মিটারে রূপান্তর করতে হবে:</p><p>λ = 4000 x 10<sup>-10</sup> m = 4 x 10<sup>-7</sup> m</p><p>প্রদত্ত পথ পার্থক্য (Δx) = 2 x 10<sup>-7</sup> m</p><p>এখন, দশা পার্থক্য (δ) নির্ণয় করি:</p><p>δ = (2π / 4 x 10<sup>-7</sup> m) * (2 x 10<sup>-7</sup> m) <br> = (2π * 2 x 10<sup>-7</sup>) / (4 x 10<sup>-7</sup>) <br> = (4π x 10<sup>-7</sup>) / (4 x 10<sup>-7</sup>) <br> = π</p><p>সুতরাং, তাদের মধ্যে দশা পার্থক্য হবে π।</p>",
+        },
+        {
+          id: 12,
+          question:
+            "ইয়ং-এর দ্বি-চিড় পরীক্ষায়, চির দুটির মধ্যবর্তী দূরত্ব অর্ধেক এবং দ্বি-চিড় থেকে পর্দার দূরত্ব দ্বিগুণ করলে ডোরার মানের ব্যবধান হবে-",
+          options: {
+            a: "একই",
+            b: "অর্ধেক",
+            c: "দ্বিগুণ",
+            d: "চারগুণ",
+          },
+          correct: "d",
+          explanation:
+            "<p>ইয়ং-এর দ্বি-চিড় পরীক্ষায় ডোরার প্রস্থ (β) এর সূত্র হলো: <br> β = (Dλ) / a</p><p>যেখানে,</p><ul><li>D = চিড় থেকে পর্দার দূরত্ব</li><li>λ = আলোর তরঙ্গদৈর্ঘ্য</li><li>a = দুটি চিড়ের মধ্যবর্তী দূরত্ব</li></ul><p>প্রথমে, চির দুটির মধ্যবর্তী দূরত্ব অর্ধেক করা হলো, অর্থাৎ a' = a/2।</p><p>এরপর, দ্বি-চিড় থেকে পর্দার দূরত্ব দ্বিগুণ করা হলো, অর্থাৎ D' = 2D।</p><p>নতুন ডোরার প্রস্থ (β') হবে:</p><p>β' = (D'λ) / a' <br> = (2Dλ) / (a/2) <br> = (2Dλ) x (2/a) <br> = 4 (Dλ/a)</p><p>যেহেতু β = (Dλ)/a, তাহলে β' = 4β।</p><p>সুতরাং, ডোরার মানের ব্যবধান (বা প্রস্থ) চারগুণ হবে।</p>",
+        },
+        {
+          id: 13,
+          question:
+            "তরঙ্গের উপরিস্থিত দুটি বিন্দুর দশা পার্থক্য π হলে এদের পথ পার্থক্য-",
+          options: {
+            a: "λ/2",
+            b: "λ",
+            c: "λ/3",
+            d: "2λ",
+          },
+          correct: "a",
+          explanation:
+            "<p>আমরা জানি, দশা পার্থক্য (δ) এবং পথ পার্থক্য (Δx) এর মধ্যে সম্পর্ক হলো:</p><p>δ = (2π/λ) * Δx</p><p>যেখানে, λ হলো তরঙ্গদৈর্ঘ্য।</p><p>প্রদত্ত দশা পার্থক্য (δ) = π</p><p>আমরা পথ পার্থক্য (Δx) বের করতে চাই:</p><p>Δx = δ * (λ/2π) <br> = π * (λ/2π) <br> = λ/2</p><p>সুতরাং, তাদের পথ পার্থক্য হবে λ/2।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "ইয়ং-এর দ্বি-চিড় পরীক্ষায় যদি তরঙ্গদৈর্ঘ্য দ্বিগুণ করা হয় তবে পট্টির প্রস্থ β হবে-",
+          options: {
+            a: "β/2",
+            b: "2β",
+            c: "3β",
+            d: "β",
+          },
+          correct: "b",
+          explanation:
+            "<p>ইয়ং-এর দ্বি-চিড় পরীক্ষায় পট্টির প্রস্থ (β) এর সূত্র হলো: <br> β = (Dλ) / a</p><p>যেখানে,</p><ul><li>D = চিড় থেকে পর্দার দূরত্ব</li><li>λ = আলোর তরঙ্গদৈর্ঘ্য</li><li>a = দুটি চিড়ের মধ্যবর্তী দূরত্ব</li></ul><p>এই পরীক্ষায় D এবং a স্থির থাকে। সুতরাং, পট্টির প্রস্থ (β) সরাসরি তরঙ্গদৈর্ঘ্য (λ) এর সমানুপাতিক, অর্থাৎ β ∝ λ।</p><p>যদি তরঙ্গদৈর্ঘ্য দ্বিগুণ করা হয়, অর্থাৎ λ' = 2λ,</p><p>তবে নতুন পট্টির প্রস্থ (β') হবে:</p><p>β' = (Dλ') / a <br> = (D * 2λ) / a <br> = 2 * (Dλ/a)</p><p>যেহেতু β = (Dλ)/a, তাহলে β' = 2β।</p><p>সুতরাং, পট্টির প্রস্থ 2β হবে।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "দ্বি-চিড় পরীক্ষায় একবর্ণী আলোক দ্বারা গঠিত ব্যতিচার ঝালরের প্রস্থ ১.৩৩ mm। সমস্ত ব্যবস্থাটিকে পানিতে নিমজ্জিত করলে (μ = ১.৩৩) ঝালর প্রস্থ হবে-",
+          options: {
+            a: "১.৩৩ mm",
+            b: "১ mm",
+            c: "(১.৩৩)² mm",
+            d: "১/১.৩৩ mm",
+          },
+          correct: "b",
+          explanation:
+            "<p>আমরা জানি, কোন মাধ্যমে আলোর তরঙ্গদৈর্ঘ্য (λ<sub>medium</sub>) = λ<sub>air</sub> / μ, যেখানে λ<sub>air</sub> হলো বায়ু মাধ্যমে তরঙ্গদৈর্ঘ্য এবং μ হলো মাধ্যমের প্রতিসরণাঙ্ক।</p><p>ইয়ং-এর দ্বি-চিড় পরীক্ষায় ঝালর প্রস্থ (β) এর সূত্র হলো: <br> β = (Dλ) / a</p><p>সুতরাং, ঝালর প্রস্থ আলোর তরঙ্গদৈর্ঘ্যের সমানুপাতিক, অর্থাৎ β ∝ λ।</p><p>যদি বায়ু মাধ্যমে ঝালর প্রস্থ β<sub>air</sub> হয়, তাহলে β<sub>air</sub> = (Dλ<sub>air</sub>) / a</p><p>পানিতে নিমজ্জিত করলে, নতুন ঝালর প্রস্থ β<sub>water</sub> হবে:</p><p>β<sub>water</sub> = (Dλ<sub>water</sub>) / a <br> = (D * (λ<sub>air</sub> / μ)) / a <br> = (1/μ) * (Dλ<sub>air</sub> / a) <br> = β<sub>air</sub> / μ</p><p>প্রদত্ত মান:</p><ul><li>β<sub>air</sub> = 1.33 mm</li><li>μ = 1.33</li></ul><p>β<sub>water</sub> = 1.33 mm / 1.33 <br> = 1 mm</p><p>সুতরাং, ঝালর প্রস্থ 1 mm হবে।</p>",
+        },
+        {
+          id: 16,
+          question:
+            "বায়ু মাধ্যমে দ্বি-চিড় পরীক্ষায় ঝালর পট্টির বেধ ০.৪ mm। সমস্ত ব্যবস্থাটিকে পানিতে নিমজ্জিত করলে পট্টির বেধ কেমন হবে? (μ = ১.৩৩)",
+          options: {
+            a: "০.৪ mm",
+            b: "০.৩ mm",
+            c: "০.৫৩ mm",
+            d: "০.৩৫ mm",
+          },
+          correct: "b",
+          explanation:
+            "<p>আমরা জানি, কোন মাধ্যমে আলোর তরঙ্গদৈর্ঘ্য (λ<sub>medium</sub>) = λ<sub>air</sub> / μ, যেখানে λ<sub>air</sub> হলো বায়ু মাধ্যমে তরঙ্গদৈর্ঘ্য এবং μ হলো মাধ্যমের প্রতিসরণাঙ্ক।</p><p>ইয়ং-এর দ্বি-চিড় পরীক্ষায় ঝালর পট্টির বেধ (β) এর সূত্র হলো: <br> β = (Dλ) / a</p><p>সুতরাং, ঝালর পট্টির বেধ আলোর তরঙ্গদৈর্ঘ্যের সমানুপাতিক, অর্থাৎ β ∝ λ।</p><p>যদি বায়ু মাধ্যমে ঝালর পট্টির বেধ β<sub>air</sub> হয়, তাহলে β<sub>air</sub> = (Dλ<sub>air</sub>) / a</p><p>পানিতে নিমজ্জিত করলে, নতুন ঝালর পট্টির বেধ β<sub>water</sub> হবে:</p><p>β<sub>water</sub> = (Dλ<sub>water</sub>) / a <br> = (D * (λ<sub>air</sub> / μ)) / a <br> = (1/μ) * (Dλ<sub>air</sub> / a) <br> = β<sub>air</sub> / μ</p><p>প্রদত্ত মান:</p><ul><li>β<sub>air</sub> = 0.4 mm</li><li>μ = 1.33</li></ul><p>β<sub>water</sub> = 0.4 mm / 1.33 <br> ≈ 0.3007 mm</p><p>যা প্রায় 0.3 mm এর সমান।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "দুটি তরঙ্গের প্রতিটির তরঙ্গদৈর্ঘ্য ১২ cm। যদি একটি থেকে অপরটি ১৪ cm অগ্রগামী হয় তবে দশাপার্থক্য কত?",
+          options: {
+            a: "π/4",
+            b: "π/3",
+            c: "π/5",
+            d: "π/6",
+          },
+          correct: "b",
+          explanation:
+            "<p>আমরা জানি, দশা পার্থক্য (δ) এবং পথ পার্থক্য (Δx) এর মধ্যে সম্পর্ক হলো:</p><p>δ = (2π/λ) * Δx</p><p>প্রদত্ত তরঙ্গদৈর্ঘ্য (λ) = 12 cm</p><p>প্রদত্ত পথ পার্থক্য (Δx) = 14 cm</p><p>এখন, দশা পার্থক্য (δ) নির্ণয় করি:</p><p>δ = (2π / 12 cm) * (14 cm) <br> = (2π * 14) / 12 <br> = 28π / 12 <br> = 7π / 3</p><p>যেহেতু দশা পার্থক্য 2π এর গুণিতক হলে একই দশায় থাকে, তাই 7π/3 = 2π + π/3। কার্যকর দশা পার্থক্য হবে π/3।</p><p>সুতরাং, তাদের দশা পার্থক্য হবে π/3।</p>",
+        },
+        {
+          id: 18,
+          question:
+            "কোনো একটি মাধ্যমের জন্য সমবর্তন কোণ ৬০°। এর জন্য সংকট কোণ হবে-",
+          options: {
+            a: "sin⁻¹(√৩)",
+            b: "tan⁻¹(√৩)",
+            c: "cos⁻¹(১/√৩)",
+            d: "sin⁻¹(১/√৩)",
+          },
+          correct: "d",
+          explanation:
+            "<p>আমরা জানি, ব্রুস্টারের সূত্র (Brewster's Law) অনুযায়ী, সমবর্তন কোণ (θ<sub>p</sub>) এর ট্যানজেন্ট মাধ্যমের প্রতিসরণাঙ্ক (μ) এর সমান:</p><p>μ = tan(θ<sub>p</sub>)</p><p>প্রদত্ত সমবর্তন কোণ (θ<sub>p</sub>) = 60°</p><p>μ = tan(60°) = √3</p><p>এখন, সংকট কোণ (θ<sub>c</sub>) এর জন্য আমরা জানি:</p><p>sin(θ<sub>c</sub>) = 1/μ</p><p>সুতরাং, sin(θ<sub>c</sub>) = 1/√3</p><p>θ<sub>c</sub> = sin⁻¹(1/√3)</p><p>অতএব, এর জন্য সংকট কোণ হবে sin⁻¹(1/√3)।</p>",
+        },
+        {
+          id: 19,
+          question:
+            "পানি ও কাচের প্রতিসরণাঙ্ক যথাক্রমে ১.৩৩ ও ১.৫। কাচে আলোর বেগ ২.০২ x ১০⁸ ms⁻¹ হলে পানিতে আলোর বেগ কত?",
+          options: {
+            a: "২.২৮ x ১০⁸ ms⁻¹",
+            b: "১.৭৯ x ১০⁸ ms⁻¹",
+            c: "৩ x ১০⁸ ms⁻¹",
+            d: "৪.০৩ x ১০⁸ ms⁻¹",
+          },
+          correct: "a",
+          explanation:
+            "<p>আমরা জানি, প্রতিসরণাঙ্ক (μ) = শূন্যস্থানে আলোর বেগ (c) / মাধ্যমে আলোর বেগ (v)</p><p>সুতরাং, c = μ * v</p><p>কাচের জন্য: <br> μ<sub>glass</sub> = 1.5 <br> v<sub>glass</sub> = 2.02 x 10⁸ ms⁻¹</p><p>শূন্যস্থানে আলোর বেগ (c) = μ<sub>glass</sub> * v<sub>glass</sub> <br> = 1.5 * 2.02 x 10⁸ ms⁻¹ <br> = 3.03 x 10⁸ ms⁻¹</p><p>এখন, পানিতে আলোর বেগ (v<sub>water</sub>) নির্ণয় করি:</p><p>μ<sub>water</sub> = 1.33</p><p>v<sub>water</sub> = c / μ<sub>water</sub> <br> = (3.03 x 10⁸ ms⁻¹) / 1.33 <br> ≈ 2.278 x 10⁸ ms⁻¹</p><p>যা প্রায় 2.28 x 10⁸ ms⁻¹ এর সমান।</p>",
+        },
+        {
+          id: 20,
+          question: "আলোক তরঙ্গের বিস্তার ২ গুণ বাড়লে তীব্রতা কতগুণ বাড়বে?",
+          options: {
+            a: "১ গুণ",
+            b: "২ গুণ",
+            c: "৪ গুণ",
+            d: "০.৫৯",
+          },
+          correct: "c",
+          explanation:
+            "<p>আলোক তরঙ্গের তীব্রতা (I) তার বিস্তারের (A) বর্গের সমানুপাতিক, অর্থাৎ I ∝ A²।</p><p>যদি আলোক তরঙ্গের বিস্তার ২ গুণ বাড়ানো হয়, অর্থাৎ নতুন বিস্তার A' = 2A।</p><p>প্রাথমিক তীব্রতা (I<sub>1</sub>) ∝ A²</p><p>নতুন তীব্রতা (I<sub>2</sub>) ∝ (A')² <br> I<sub>2</sub> ∝ (2A)² <br> I<sub>2</sub> ∝ 4A²</p><p>সুতরাং, I<sub>2</sub> = 4I<sub>1</sub>।</p><p>অতএব, তীব্রতা ৪ গুণ বাড়বে।</p>",
+        },
+        {
+          id: 21,
+          question:
+            "আলোক রশ্মি ৫০° সমবর্তন কোণে প্রতিফলকের উপর আপতিত হলে প্রতিসরণ কোণের মান হবে-",
+          options: {
+            a: "৫০°",
+            b: "৪০°",
+            c: "৯০°",
+            d: "৪৫°",
+          },
+          correct: "b",
+          explanation:
+            "<p>ব্রুস্টারের সূত্র অনুযায়ী, যখন একটি আলোক রশ্মি কোন মাধ্যমে সমবর্তন কোণে (θ<sub>p</sub>) আপতিত হয়, তখন প্রতিফলিত রশ্মি এবং প্রতিসরিত রশ্মি পরস্পর লম্ব হয়। অর্থাৎ, তাদের মধ্যবর্তী কোণ 90° হয়।</p><p>আপতন কোণ (θ<sub>p</sub>) + প্রতিসরণ কোণ (θ<sub>r</sub>) = 90°</p><p>প্রদত্ত সমবর্তন কোণ (আপতন কোণ) = 50°</p><p>তাহলে, প্রতিসরণ কোণ (θ<sub>r</sub>) = 90° - আপতন কোণ <br> = 90° - 50° <br> = 40°</p><p>সুতরাং, প্রতিসরণ কোণের মান হবে ৪০°।</p>",
+        },
+        {
+          id: 22,
+          question:
+            "শূন্যস্থানে আলোর বেগ ৩ x ১০⁸ ms⁻¹ হলে, প্রতিসরাঙ্কের একটি তরলের আলোর বেগ কত ms⁻¹?",
+          options: {
+            a: "৩ x ১০⁸/১.৫",
+            b: "৩ x ১০⁸/১.৩৩",
+            c: "৩ x ১০⁸ x ১.৫৪",
+            d: "কোনোটিই নয়",
+          },
+          correct: "a",
+          explanation:
+            "<p>আমরা জানি, প্রতিসরণাঙ্ক (μ) = শূন্যস্থানে আলোর বেগ (c) / মাধ্যমে আলোর বেগ (v)</p><p>অর্থাৎ, μ = c / v</p><p>সুতরাং, মাধ্যমে আলোর বেগ (v) = c / μ</p><p>যদি শূন্যস্থানে আলোর বেগ (c) = 3 x 10⁸ ms⁻¹ হয় এবং তরলের প্রতিসরাঙ্ক μ হয়, তাহলে তরলে আলোর বেগ হবে c/μ।</p><p>এখানে বিকল্পগুলোতে নির্দিষ্ট প্রতিসরাঙ্কের মান দেওয়া হয়নি, তবে একটি উদাহরণ হিসেবে 1.5 প্রতিসরাঙ্কের তরলের আলোর বেগ চাওয়া হয়েছে।</p><p>যদি প্রতিসরাঙ্ক 1.5 হয়, তাহলে তরলের আলোর বেগ হবে: <br> v = (3 x 10⁸ ms⁻¹) / 1.5</p><p>এই কারণে, বিকল্প (a) 3 x 10⁸/1.5 সঠিক।</p>",
+        },
+        {
+          id: 23,
+          question:
+            "৯ : ১ আনুপাতিক তীব্রতাসম্পন্ন দুটি আলোক রশ্মিগুচ্ছ ব্যতিচার গঠন করলে সর্বোচ্চ ও সর্বনিম্ন তীব্রতার অনুপাত কত হবে?",
+          options: {
+            a: "৩ : ১",
+            b: "৪ : ১",
+            c: "২৫ : ৯",
+            d: "৮ : ১",
+          },
+          correct: "b",
+          explanation:
+            "<p>আমরা জানি, তীব্রতা (I) বিস্তারের (A) বর্গের সমানুপাতিক, অর্থাৎ I ∝ A²।</p><p>যদি I<sub>1</sub> এবং I<sub>2</sub> দুটি তরঙ্গের তীব্রতা হয়, এবং A<sub>1</sub> ও A<sub>2</sub> তাদের বিস্তার হয়, তাহলে:</p><p>I<sub>1</sub> / I<sub>2</sub> = A<sub>1</sub>² / A<sub>2</sub>²</p><p>প্রদত্ত তীব্রতার অনুপাত I<sub>1</sub> : I<sub>2</sub> = 9 : 1</p><p>তাহলে, A<sub>1</sub>² / A<sub>2</sub>² = 9 / 1</p><p>উভয় পাশে বর্গমূল করে পাই: <br> A<sub>1</sub> / A<sub>2</sub> = √9 / √1 = 3 / 1</p><p>সর্বোচ্চ তীব্রতা (I<sub>max</sub>) = (A<sub>1</sub> + A<sub>2</sub>)²</p><p>সর্বনিম্ন তীব্রতা (I<sub>min</sub>) = (A<sub>1</sub> - A<sub>2</sub>)²</p><p>সর্বোচ্চ ও সর্বনিম্ন তীব্রতার অনুপাত:</p><p>I<sub>max</sub> / I<sub>min</sub> = (A<sub>1</sub> + A<sub>2</sub>)² / (A<sub>1</sub> - A<sub>2</sub>)² <br> = ((A<sub>1</sub>/A<sub>2</sub>) + 1)² / ((A<sub>1</sub>/A<sub>2</sub>) - 1)²</p><p>A<sub>1</sub>/A<sub>2</sub> = 3 বসিয়ে পাই:</p><p>I<sub>max</sub> / I<sub>min</sub> = (3 + 1)² / (3 - 1)² <br> = (4)² / (2)² <br> = 16 / 4 <br> = 4 / 1</p><p>সুতরাং, সর্বোচ্চ ও সর্বনিম্ন তীব্রতার অনুপাত ৪ : ১ হবে।</p>",
+        },
+        {
+          id: 24,
+          question:
+            "I এবং ৪I প্রাবল্যের দুটি তরঙ্গ উপরিপাতিত হলো। সর্বোচ্চ এবং সর্বনিম্ন প্রাবল্যের অনুপাত কত?",
+          options: {
+            a: "৫ : ৩",
+            b: "৯ : ১",
+            c: "৯ : ৩",
+            d: "৫ : ১",
+          },
+          correct: "b",
+          explanation:
+            "<p>আমরা জানি, তীব্রতা (I) বিস্তারের (A) বর্গের সমানুপাতিক, অর্থাৎ I ∝ A²।</p><p>প্রদত্ত দুটি তরঙ্গের প্রাবল্য হলো I<sub>1</sub> = I এবং I<sub>2</sub> = 4I।</p><p>তাহলে, তাদের বিস্তারের অনুপাত হবে:</p><p>A<sub>1</sub>² ∝ I  => A<sub>1</sub> ∝ √I</p><p>A<sub>2</sub>² ∝ 4I => A<sub>2</sub> ∝ √(4I) = 2√I</p><p>তাহলে, A<sub>1</sub> : A<sub>2</sub> = √I : 2√I = 1 : 2</p><p>সুতরাং, A<sub>1</sub> = k এবং A<sub>2</sub> = 2k (যেখানে k একটি ধ্রুবক)</p><p>সর্বোচ্চ প্রাবল্য (I<sub>max</sub>) = (A<sub>1</sub> + A<sub>2</sub>)² <br> = (k + 2k)² <br> = (3k)² <br> = 9k²</p><p>সর্বনিম্ন প্রাবল্য (I<sub>min</sub>) = (A<sub>1</sub> - A<sub>2</sub>)² <br> = (k - 2k)² <br> = (-k)² <br> = k²</p><p>সর্বোচ্চ ও সর্বনিম্ন প্রাবল্যের অনুপাত:</p><p>I<sub>max</sub> / I<sub>min</sub> = 9k² / k² <br> = 9 / 1</p><p>সুতরাং, সর্বোচ্চ এবং সর্বনিম্ন প্রাবল্যের অনুপাত ৯ : ১।</p>",
+        },
+        {
+          id: 25,
+          question:
+            "দুটি সোজা ও সমান্তরাল চিড় পরস্পর হতে a দূরে অবস্থিত। একটি একবর্ণী আলো দ্বারা এদের আলোকিত করায় চিড় হতে D দূরে অবস্থিত পর্দায় ডোরা সৃষ্টি হলো। প্রতি ডোরার প্রস্থ X। পরবর্তীতে a ও D উভয়টিকে দ্বিগুণ করা হলো। নতুন ডোরার প্রস্থ হবে-",
+          options: {
+            a: "X/2",
+            b: "৪X",
+            c: "২X",
+            d: "X",
+          },
+          correct: "d",
+          explanation:
+            "<p>ইয়ং-এর দ্বি-চিড় পরীক্ষায় ডোরার প্রস্থ (X) এর সূত্র হলো: <br> X = (Dλ) / a</p><p>যেখানে,</p><ul><li>D = চিড় থেকে পর্দার দূরত্ব</li><li>λ = আলোর তরঙ্গদৈর্ঘ্য</li><li>a = দুটি চিড়ের মধ্যবর্তী দূরত্ব</li></ul><p>প্রথমে, ডোরার প্রস্থ ছিল X = (Dλ) / a</p><p>পরবর্তীতে, a ও D উভয়টিকে দ্বিগুণ করা হলো।</p><p>নতুন চিড়ের মধ্যবর্তী দূরত্ব (a') = 2a</p><p>নতুন চিড় থেকে পর্দার দূরত্ব (D') = 2D</p><p>নতুন ডোরার প্রস্থ (X') হবে:</p><p>X' = (D'λ) / a' <br> = (2Dλ) / (2a) <br> = (2/2) * (Dλ/a) <br> = 1 * (Dλ/a)</p><p>যেহেতু X = (Dλ)/a, তাহলে X' = X।</p><p>সুতরাং, নতুন ডোরার প্রস্থ একই থাকবে।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                <label class="option" data-option="${option}">
+                                <div class="circle">${option}</div>
+                                <span class="option-text">${question.options[option]}</span>
+                                </label>`;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                                         <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                                         <div class="explanation-content">
+                                                                                           <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                                           ${question.explanation}
+                                                                                         </div>
+                                                                                       </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                                    <p class="question-label">${
+                                                                                      index +
+                                                                                      1
+                                                                                    }. ${
+            question.question
+          }</p>
+                                                                                    <div class="options">
+                                                                                      ${optionsHTML}
+                                                                                    </div>
+                                                                                    ${explanationHTML}
+                                                                                  `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
